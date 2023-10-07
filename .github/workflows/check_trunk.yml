@@ -1,0 +1,85 @@
+name: Check Trunk
+
+on:
+  push: 
+    branches: [trunk]
+
+jobs:
+  unit:
+    runs-on: buildjet-2vcpu-ubuntu-2204-arm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+          
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: ./go.mod
+  
+      - name: Run Go Unit Tests
+        run: go test -v ./...
+
+  build:
+    runs-on: buildjet-2vcpu-ubuntu-2204-arm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: ./go.mod
+
+      - name: Build Go Project
+        run: go build
+
+      - name: Try Build Container
+        run: |
+          if command -v docker; then
+            docker build --rm -t go-fetch:demo .
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: go-fetch-demo-${{ github.run_id }}
+          path: ./fetch
+
+  acceptance:
+    runs-on: buildjet-2vcpu-ubuntu-2204-arm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifact
+        id: download-artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: go-fetch-demo-${{ github.run_id }}
+          path: ./fetch
+
+      - name: Set Permissions for Artifact
+        run: chmod +x ${{ steps.download-artifact.outputs.download-path }}/fetch
+
+      - name: Run Acceptance Tests
+        run: |
+          touch result.log
+          ${{ steps.download-artifact.outputs.download-path }}/fetch https://www.google.com >result.log
+          if grep -q 'site:' result.log; then
+              echo "Test failed, output found in result log without metadata switch being enabled"
+              exit 1
+          fi
+          ${{ steps.download-artifact.outputs.download-path }}/fetch --metadata https://www.google.com >result.log
+          if ! grep -q 'site:' result.log; then
+              echo "Test failed, output not found in result log with metadata switch being enabled"
+              exit 1
+          fi
