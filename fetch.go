@@ -24,7 +24,6 @@ func fetchUrl(uri string) ([]byte, error) {
 	if err != nil || res.StatusCode >= 400 {
 		return nil, errors.Join(
 			fmt.Errorf("failed to fetch url: %v", uri),
-			fmt.Errorf("status: %v - %v", res.StatusCode, res.Status),
 			err,
 		)
 	}
