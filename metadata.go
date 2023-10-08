@@ -47,7 +47,7 @@ func gatherMetadata(uri string, body []byte) HtmlMetadata {
 func printMetadata(htmlMeta HtmlMetadata) {
 	fmt.Printf("site: %s\n", htmlMeta.Url)
 	fmt.Printf("num_links: %d\n", len(htmlMeta.Anchors)+len(htmlMeta.Links))
-	fmt.Printf("Images: %d\n", len(htmlMeta.Images))
+	fmt.Printf("images: %d\n", len(htmlMeta.Images))
 	fmt.Printf("last_fetch: %s\n", htmlMeta.LastFetch)
 	fmt.Println()
 }
